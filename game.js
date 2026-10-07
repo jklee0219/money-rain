@@ -406,7 +406,7 @@ function layout() {
 }
 window.addEventListener("resize", layout);
 const R = Math.round;
-const IMG_V = "3";                                                 // 그림을 바꾸면 올려서 브라우저가 새 그림을 받게
+const IMG_V = "4";                                                 // 그림을 바꾸면 올려서 브라우저가 새 그림을 받게
 function img(n) { const im = new Image(); im.src = `img/${n}.png?v=${IMG_V}`; return im; }
 function imgOk(im) { return im && im.complete && im.naturalWidth > 0; }
 const ITEM_IMG = Object.fromEntries(["coin", "bill", "bundle", "gold", "diamond", "bad"].map(n => [n, img(`item_${n}`)]));
