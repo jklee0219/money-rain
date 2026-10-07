@@ -636,7 +636,7 @@ function drawResult(X, W, H) {
 function drawShop(X, W, H) {
   cx.fillStyle = "rgba(8,5,20,.6)"; cx.fillRect(0, 0, view.w, H);
   text(T.shop, X + W / 2, 30, 24, C.yellow, "center", true);
-  text(`${T.wallet} ${won(st.wallet)}`, X + W / 2, 58, 15, "#ffffff", "center", true, W - 20);
+  text(`${T.wallet}(현금) ${won(st.wallet)} · ${T.worth} ${won(netWorth())}`.replace("(현금)", T === TEXT.ko ? "(현금)" : ""), X + W / 2, 58, 15, "#ffffff", "center", true, W - 20);   // 쓸 수 있는 돈 + 산 자산까지 합친 총자산
   text(`${T.bonus} +${Math.round(assetBonus() * 100)}% · ${T.interestNote(Math.round(INTEREST * 100))}`, X + W / 2, 80, 12, C.green, "center", true, W - 20);
   const cols = 2, gap = 8, top = 98, bottom = H - 70;
   const cw = (W - 24 - gap) / cols, ch = Math.min(96, (bottom - top - gap * 4) / 5);
