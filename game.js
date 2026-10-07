@@ -380,7 +380,8 @@ function layout() {
 }
 window.addEventListener("resize", layout);
 const R = Math.round;
-function img(n) { const im = new Image(); im.src = `img/${n}.png`; return im; }
+const IMG_V = "2";                                                 // 그림을 바꾸면 올려서 브라우저가 새 그림을 받게
+function img(n) { const im = new Image(); im.src = `img/${n}.png?v=${IMG_V}`; return im; }
 function imgOk(im) { return im && im.complete && im.naturalWidth > 0; }
 const ITEM_IMG = Object.fromEntries(["coin", "bill", "bundle", "gold", "diamond", "bad"].map(n => [n, img(`item_${n}`)]));
 const ASSET_IMG = ASSETS.map(a => img(`asset_${a.id}`));
