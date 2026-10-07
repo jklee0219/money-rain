@@ -321,7 +321,7 @@ function update(dt) {
   bgFade = Math.max(0, bgFade - dt * 0.8);
   { const p = st.pl;                                               // 손가락을 따라 달려감 (최고 속도 제한)
     p.stun = Math.max(0, p.stun - dt);
-    const want = (p.tx - p.x) * 30, maxV = 8;
+    const want = (p.tx - p.x) * 16, maxV = 3.2;                   // 끌기도 부드럽고 천천히 따라옴
     p.vx = p.stun > 0 ? 0 : Math.max(-maxV, Math.min(maxV, want));
     if (Math.abs(p.vx) > 0.15) p.face = p.vx > 0 ? 1 : -1;
     p.x = Math.max(0.05, Math.min(0.95, p.x + p.vx * dt));
@@ -694,7 +694,7 @@ window.addEventListener("keydown", e => {
 });
 function keyMove(dt) {                                              // 키보드: ← → 로 이동
   const l = keysDown.has("arrowleft") || keysDown.has("a"), r = keysDown.has("arrowright") || keysDown.has("d");
-  if (st.mode === "play" && (l || r) && l !== r) st.pl.tx = Math.max(0.05, Math.min(0.95, st.pl.x + (r ? 1 : -1) * 0.2));
+  if (st.mode === "play" && (l || r) && l !== r) st.pl.tx = Math.max(0.05, Math.min(0.95, st.pl.x + (r ? 1 : -1) * 0.045));   // 1초에 화면 폭의 약 1.35배
 }
 
 // ───────────── 루프 ─────────────
