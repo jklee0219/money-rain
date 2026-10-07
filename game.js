@@ -64,13 +64,13 @@ function won(n) {                                                 // 한국식 �
 }
 
 // ───────────── 규칙 ─────────────
-const ITEMS = { coin: 100, bill: 1000, bundle: 5000, gold: 20000, diamond: 100000 };
+const ITEMS = { coin: 100, bill: 10000, bundle: 50000, gold: 200000, diamond: 1000000 };   // 100원 동전 · 만 원권 · 오만 원권 · 금괴 · 다이아
 const ASSETS = [                                                  // 가격 · 수입 보너스
-  { id: "piggy",   price: 5e4,    bonus: 0.10 }, { id: "bike",    price: 5e5,    bonus: 0.15 },
-  { id: "scooter", price: 2e6,    bonus: 0.25 }, { id: "car",     price: 8e6,    bonus: 0.40 },
-  { id: "studio",  price: 6e7,    bonus: 0.60 }, { id: "apt",     price: 3e8,    bonus: 1.00 },
-  { id: "mall",    price: 1.2e9,  bonus: 1.80 }, { id: "tower",   price: 6e9,    bonus: 3.00 },
-  { id: "island",  price: 3e10,   bonus: 5.00 }, { id: "station", price: 2e11,   bonus: 9.00 },
+  { id: "piggy",   price: 4e5,    bonus: 0.10 }, { id: "bike",    price: 4e6,    bonus: 0.15 },   // 지폐가 진짜 액수(만·오만 원)라 가격도 그만큼 큼
+  { id: "scooter", price: 1.6e7,  bonus: 0.25 }, { id: "car",     price: 6.4e7,  bonus: 0.40 },
+  { id: "studio",  price: 4.8e8,  bonus: 0.60 }, { id: "apt",     price: 2.4e9,  bonus: 1.00 },
+  { id: "mall",    price: 9.6e9,  bonus: 1.80 }, { id: "tower",   price: 4.8e10, bonus: 3.00 },
+  { id: "island",  price: 2.4e11, bonus: 5.00 }, { id: "station", price: 1.6e12, bonus: 9.00 },
 ];
 const INTEREST = 0.02;                                            // 판이 끝날 때마다 지갑 돈에 붙는 이자
 const C = { pink: "#ff40a0", cyan: "#3ce6ff", yellow: "#ffd640", green: "#5cff8a", red: "#ff4d6d", ink: "#1a1030", night: "#0e0a22", gold: "#ffcf40" };
@@ -380,7 +380,7 @@ function layout() {
 }
 window.addEventListener("resize", layout);
 const R = Math.round;
-const IMG_V = "2";                                                 // 그림을 바꾸면 올려서 브라우저가 새 그림을 받게
+const IMG_V = "3";                                                 // 그림을 바꾸면 올려서 브라우저가 새 그림을 받게
 function img(n) { const im = new Image(); im.src = `img/${n}.png?v=${IMG_V}`; return im; }
 function imgOk(im) { return im && im.complete && im.naturalWidth > 0; }
 const ITEM_IMG = Object.fromEntries(["coin", "bill", "bundle", "gold", "diamond", "bad"].map(n => [n, img(`item_${n}`)]));
