@@ -31,19 +31,17 @@ const sdk = {
 const TEXT = {
   ko: { title: "돈벼락", start: "시작!", shop: "자산 사기", stage: n => `스테이지 ${n}`, wallet: "지갑", worth: "총자산",
         bonus: "수입 보너스", credit: "신용도", earned: "이번 판 수입", combo: "콤보", maxCombo: "최대 콤보", acc: "받은 비율",
-        clear: "스테이지 클리어!", bust: "파산!", next: "다음 스테이지", retry: "다시 도전", back: "돌아가기",
-        owned: "✓ 구매 완료", buy: "구매", locked: "???", fever: "FEVER!", go: "GO!", bill: "고지서!", miss: "놓침!",
+        clear: "스테이지 클리어!", bust: "게임 오버", bustNote: "놓친 돈이 많아 신용도가 바닥났어요 · 번 돈은 지갑에 들어갔어요", next: "다음 스테이지", retry: "다시 도전", back: "돌아가기",
+        owned: "✓ 구매 완료", owned2: (n, m) => `자산 ${n}/${m}개`, buy: "구매", locked: "???", fever: "FEVER!", go: "GO!", bill: "고지서!", miss: "놓침!",
         how: "캐릭터를 끌어서 떨어지는 돈을 받기! 빨간 고지서는 피하기", keys: "키보드: ← →",
-        assets: ["돼지저금통", "자전거", "오토바이", "경차", "원룸", "아파트", "상가", "빌딩", "개인 섬", "우주정거장"],
         bought: n => `${n} 구입!`, clearBonus: "클리어 보너스", interest: "이자", interestNote: p => `지갑 돈에 판마다 이자 ${p}%`,
         caught: "받은 돈", missed: "놓친 돈", bills: "맞은 고지서", streak: "돈줄 완벽!", nice: ["좋아!", "굿!", "나이스!", "오예!"],
         rankLabel: "신분", moved: h => `${h}${josaRo(h)} 이사!`, hoodLabel: "사는 곳" },
   en: { title: "Money Rain", start: "Start!", shop: "Buy assets", stage: n => `Stage ${n}`, wallet: "Wallet", worth: "Net worth",
         bonus: "Income bonus", credit: "Credit", earned: "Earned", combo: "COMBO", maxCombo: "Max combo", acc: "Catch rate",
-        clear: "Stage clear!", bust: "Bankrupt!", next: "Next stage", retry: "Try again", back: "Back",
-        owned: "✓ Owned", buy: "Buy", locked: "???", fever: "FEVER!", go: "GO!", bill: "Bill!", miss: "Missed!",
+        clear: "Stage clear!", bust: "GAME OVER", bustNote: "Too many misses drained your credit · earnings kept", next: "Next stage", retry: "Try again", back: "Back",
+        owned: "✓ Owned", owned2: (n, m) => `${n}/${m} assets`, buy: "Buy", locked: "???", fever: "FEVER!", go: "GO!", bill: "Bill!", miss: "Missed!",
         how: "Drag your hero to catch the falling cash! Dodge red bills", keys: "Keys: ← →",
-        assets: ["Piggy bank", "Bicycle", "Scooter", "Compact car", "Studio", "Apartment", "Mall", "Skyscraper", "Private island", "Space station"],
         bought: n => `Bought ${n}!`, clearBonus: "Clear bonus", interest: "Interest", interestNote: p => `Wallet earns ${p}% interest each run`,
         caught: "Caught", missed: "Missed", bills: "Bills hit", streak: "Perfect stream!", nice: ["Nice!", "Good!", "Sweet!", "Yeah!"],
         rankLabel: "Rank", rankUp: r => `Rank up: ${r}!`, moved: h => `Moved to ${h}!`, hoodLabel: "Home" },
@@ -65,13 +63,32 @@ function won(n) {                                                 // 한국식 �
 
 // ───────────── 규칙 ─────────────
 const ITEMS = { coin: 100, bill: 10000, bundle: 50000, gold: 200000, diamond: 1000000 };   // 100원 동전 · 만 원권 · 오만 원권 · 금괴 · 다이아
-const ASSETS = [                                                  // 가격 · 수입 보너스
-  { id: "piggy",   price: 4e5,    bonus: 0.10 }, { id: "bike",    price: 4e6,    bonus: 0.15 },   // 지폐가 진짜 액수(만·오만 원)라 가격도 그만큼 큼
-  { id: "scooter", price: 1.6e7,  bonus: 0.25 }, { id: "car",     price: 6.4e7,  bonus: 0.40 },
-  { id: "studio",  price: 4.8e8,  bonus: 0.60 }, { id: "apt",     price: 2.4e9,  bonus: 1.00 },
-  { id: "mall",    price: 9.6e9,  bonus: 1.80 }, { id: "tower",   price: 4.8e10, bonus: 3.00 },
-  { id: "island",  price: 2.4e11, bonus: 5.00 }, { id: "station", price: 1.6e12, bonus: 9.00 },
+// 자산 60개: 싼 것부터 비싼 것 순서. ★ = 원래 있던 10개 (신분·동네가 바뀌는 단계)
+const ASSET_LIST = [
+  ["piggy", "돼지저금통", "Piggy bank"], ["sneakers", "새 운동화", "New sneakers"], ["phone", "최신 스마트폰", "New smartphone"],
+  ["bike", "자전거", "Bicycle"], ["console", "게임기", "Game console"], ["laptop", "노트북", "Laptop"], ["guitar", "전자기타", "Electric guitar"],
+  ["scooter", "오토바이", "Scooter"], ["watch", "명품 시계", "Luxury watch"], ["handbag", "명품 가방", "Designer bag"],
+  ["car", "경차", "Compact car"], ["foodtruck", "푸드트럭", "Food truck"], ["camper", "캠핑카", "Camper van"], ["sedan", "중형 세단", "Sedan"],
+  ["studio", "원룸", "Studio"], ["cafe", "동네 카페", "Corner cafe"], ["sportscar", "스포츠카", "Sports car"], ["officetel", "오피스텔", "Officetel"],
+  ["store", "편의점", "Convenience store"], ["suv", "고급 SUV", "Luxury SUV"],
+  ["apt", "아파트", "Apartment"], ["restaurant", "레스토랑", "Restaurant"], ["house", "전원주택", "Country house"], ["supercar", "슈퍼카", "Supercar"],
+  ["speedboat", "스피드보트", "Speedboat"], ["smallbldg", "꼬마빌딩", "Small building"], ["gym", "피트니스센터", "Fitness center"],
+  ["hotelsmall", "부티크 호텔", "Boutique hotel"], ["mall", "상가", "Mall"], ["penthouse", "펜트하우스", "Penthouse"],
+  ["heli", "헬리콥터", "Helicopter"], ["yacht", "대형 요트", "Superyacht"], ["tower", "빌딩", "Skyscraper"], ["golf", "골프장", "Golf course"],
+  ["resort", "리조트", "Resort"], ["themepark", "놀이공원", "Theme park"], ["jet", "전용 제트기", "Private jet"], ["stadium", "야구장", "Ballpark"],
+  ["cruise", "크루즈선", "Cruise ship"], ["hotel5", "5성급 호텔", "Five-star hotel"],
+  ["island", "개인 섬", "Private island"], ["winery", "와이너리", "Winery"], ["castle", "유럽 성", "European castle"], ["tvstation", "방송국", "TV station"],
+  ["airline", "항공사", "Airline"], ["landmark", "초고층 타워", "Landmark tower"], ["oilrig", "석유 시추선", "Oil rig"], ["satellite", "인공위성", "Satellite"],
+  ["rocket", "우주 로켓", "Space rocket"], ["station", "우주정거장", "Space station"],
+  ["moonbase", "달 기지", "Moon base"], ["marsbase", "화성 기지", "Mars colony"], ["ufo", "UFO", "UFO"], ["asteroid", "소행성 광산", "Asteroid mine"],
+  ["spacehotel", "우주 호텔", "Space hotel"], ["ringplanet", "고리 행성", "Ringed planet"], ["fleet", "우주 함대", "Star fleet"],
+  ["dyson", "다이슨 구", "Dyson sphere"], ["galaxy", "은하", "Galaxy"], ["multiverse", "평행우주", "Multiverse"],
 ];
+// 가격은 단계마다 PRICE_R 배, 보너스는 8%씩 커짐 (끝까지 사면 수입 약 +3,700%)
+const PRICE_R = 1.35;
+const ASSETS = ASSET_LIST.map(([id, ko, en], i) => ({ id, ko, en, price: Math.round(4e5 * Math.pow(PRICE_R, i) / 1e4) * 1e4, bonus: Math.round(0.03 * Math.pow(1.08, i) * 100) / 100 }));
+const OLD_POS = [1, 4, 8, 11, 15, 21, 29, 33, 41, 50];               // 예전 10개 자산이 새 목록에서 몇 번째인지 (저장 옮기기·신분 단계)
+const assetName = i => (T === TEXT.ko ? ASSETS[i].ko : ASSETS[i].en);
 const INTEREST = 0.02;                                            // 판이 끝날 때마다 지갑 돈에 붙는 이자
 const C = { pink: "#ff40a0", cyan: "#3ce6ff", yellow: "#ffd640", green: "#5cff8a", red: "#ff4d6d", ink: "#1a1030", night: "#0e0a22", gold: "#ffcf40" };
 
@@ -89,12 +106,13 @@ const comboMult = c => c >= 60 ? 4 : c >= 30 ? 3 : c >= 10 ? 2 : 1;
 const fever = () => st.combo >= 100;
 
 // ───────────── 저장 ─────────────
-function save() { sdk.save(JSON.stringify({ v: 1, stage: st.stage, wallet: st.wallet, owned: st.owned, plays: st.plays, best: st.best, bestCombo: st.bestCombo })); }
+function save() { sdk.save(JSON.stringify({ v: 2, stage: st.stage, wallet: st.wallet, owned: st.owned, plays: st.plays, best: st.best, bestCombo: st.bestCombo })); }
 async function loadSave() {
   const raw = await sdk.load(); if (!raw) return;
   try {
     const d = JSON.parse(raw);
     st.stage = Math.max(1, d.stage | 0); st.wallet = Math.max(0, +d.wallet || 0); st.owned = Math.min(ASSETS.length, Math.max(0, d.owned | 0));
+    if ((d.v | 0) < 2 && st.owned > 0) st.owned = OLD_POS[Math.min(10, st.owned) - 1];   // 예전 10개 기준 → 60개 목록
     st.plays = d.plays | 0; st.best = Math.max(0, +d.best || 0); st.bestCombo = d.bestCombo | 0;
   } catch (e) {}
 }
@@ -134,12 +152,12 @@ const CH = {
 // 자산 단계별 동네: 배경 그림 · 화음 진행 · 멜로디 음색 · 줄 색 분위기
 const HOODS = [
   { bg: "bg_rooftop",   min: 0,  prog: ["Am", "F", "C", "G"],     wave: "square",   ko: "옥탑방 동네",   en: "Rooftop flat" },
-  { bg: "bg_street",    min: 2,  prog: ["C", "G", "Am", "F"],     wave: "square",   ko: "골목 상가",     en: "Shop street" },
-  { bg: "city_bg",      min: 4,  prog: ["C", "Am", "F", "G"],     wave: "square",   ko: "도시 야경",     en: "City lights" },
-  { bg: "bg_hanriver",  min: 5,  prog: ["F", "G", "Em", "Am"],    wave: "triangle", ko: "한강 아파트",   en: "Riverside" },
-  { bg: "bg_penthouse", min: 7,  prog: ["Dm", "G", "Cmaj7", "Am"], wave: "sawtooth", ko: "구름 위 펜트하우스", en: "Penthouse" },
-  { bg: "bg_island",    min: 9,  prog: ["C", "F", "G", "F"],      wave: "triangle", ko: "나만의 섬",     en: "Private island" },
-  { bg: "bg_space",     min: 10, prog: ["Fmaj7", "Em", "Dm", "Cmaj7"], wave: "sine", ko: "우주",          en: "Outer space" },
+  { bg: "bg_street",    min: 4,  prog: ["C", "G", "Am", "F"],     wave: "square",   ko: "골목 상가",     en: "Shop street" },
+  { bg: "city_bg",      min: 11, prog: ["C", "Am", "F", "G"],     wave: "square",   ko: "도시 야경",     en: "City lights" },
+  { bg: "bg_hanriver",  min: 15, prog: ["F", "G", "Em", "Am"],    wave: "triangle", ko: "한강 아파트",   en: "Riverside" },
+  { bg: "bg_penthouse", min: 29, prog: ["Dm", "G", "Cmaj7", "Am"], wave: "sawtooth", ko: "구름 위 펜트하우스", en: "Penthouse" },
+  { bg: "bg_island",    min: 41, prog: ["C", "F", "G", "F"],      wave: "triangle", ko: "나만의 섬",     en: "Private island" },
+  { bg: "bg_space",     min: 50, prog: ["Fmaj7", "Em", "Dm", "Cmaj7"], wave: "sine", ko: "우주",          en: "Outer space" },
 ];
 const hoodOf = owned => { let h = 0; HOODS.forEach((x, i) => { if (owned >= x.min) h = i; }); return h; };
 const hood = () => HOODS[hoodOf(st.owned)];
@@ -149,6 +167,11 @@ const sfx = {
   snare() { noise(0.12, 0.22, 1500); },
   hat() { noise(0.03, 0.08, 7000); },
   bass(f) { tone(f / 2, 0.18, "triangle", 0.22); },
+  clink() { tone(2349, 0.09, "triangle", 0.13); setTimeout(() => tone(3136, 0.2, "triangle", 0.1), 60); setTimeout(() => tone(2637, 0.3, "sine", 0.05), 110); },   // 동전: 땡그랑
+  paper() { noise(0.06, 0.28, 2500); setTimeout(() => noise(0.05, 0.2, 3800), 55); },          // 지폐: 사락
+  goldbar() { tone(330, 0.16, "triangle", 0.28, 0.7); setTimeout(() => tone(1760, 0.25, "triangle", 0.08), 40); },   // 금괴: 묵직하게 쿵 + 반짝
+  sparkle() { [1568, 2093, 2637, 3136].forEach((f, i) => setTimeout(() => tone(f, 0.18, "triangle", 0.08), i * 50)); },   // 다이아
+  catchOf(type) { if (type === "coin") this.clink(); else if (type === "bill" || type === "bundle") this.paper(); else if (type === "gold") this.goldbar(); else this.sparkle(); },
   catchAt(x) { const i = Math.max(0, Math.min(3, Math.floor(x * 4))), w = fever() ? "sawtooth" : hood().wave;   // 받은 자리(왼→오)에 따라 화음 음
     tone(chordAt(st.time)[i] * 2, 0.12, w, w === "sine" || w === "triangle" ? 0.16 : 0.11); },
   coin() { tone(1568, 0.05, "square", 0.08); },
@@ -243,8 +266,7 @@ function catchDrop(d) {
   setPose("catch", 0.2);
   burst(px, y, d.type);
   pop(px, y - 30, `+${won(gain)}`, d.type === "diamond" ? C.cyan : C.yellow);
-  sfx.catchAt(d.x);
-  if (d.type === "diamond" || d.type === "gold") sfx.coin();
+  sfx.catchOf(fever() && d.type !== "diamond" ? "gold" : d.type);   // FEVER 때는 모두 금괴 소리
   if (d.stream) {                                                 // 돈줄을 하나도 안 놓치면 보너스
     st.streamGot[d.stream]++;
     if (st.streamGot[d.stream] === st.streamLen[d.stream]) {
@@ -296,7 +318,7 @@ function buyAsset() {
   const after = hoodOf(st.owned);
   if (after !== before) { bgFrom = before; bgFade = 1; banner(T.moved(T === TEXT.ko ? HOODS[after].ko : HOODS[after].en), C.cyan); }
   else if (lookOf(st.owned) !== lookOf(st.owned - 1)) banner(T === TEXT.ko ? `${rankName()}${josaRo(rankName())} 신분 상승!` : T.rankUp(rankName()), C.yellow);
-  else banner(T.bought(T.assets[st.owned - 1]), C.yellow);
+  else banner(T.bought(assetName(st.owned - 1)), C.yellow);
   st.best = Math.max(st.best, netWorth()); save();
   if (window.WSA_LB) window.WSA_LB.submit(Math.floor(netWorth()), { char: a.id, tier: 0 });
 }
@@ -321,10 +343,14 @@ function update(dt) {
   bgFade = Math.max(0, bgFade - dt * 0.8);
   { const p = st.pl;                                               // 손가락을 따라 달려감 (최고 속도 제한)
     p.stun = Math.max(0, p.stun - dt);
-    const want = (p.tx - p.x) * 16, maxV = 3.2;                   // 끌기도 부드럽고 천천히 따라옴
-    p.vx = p.stun > 0 ? 0 : Math.max(-maxV, Math.min(maxV, want));
+    if (dragging !== null && p.stun <= 0) {                        // 마우스·손가락: 끈 만큼 그대로, 지연 없이 1:1
+      p.vx = dt > 0 ? (p.tx - p.x) / dt : 0; p.x = p.tx;
+    } else {                                                       // 키보드: 천천히 일정한 속도
+      const want = (p.tx - p.x) * 16, maxV = 3.2;
+      p.vx = p.stun > 0 ? 0 : Math.max(-maxV, Math.min(maxV, want));
+      p.x = Math.max(0.05, Math.min(0.95, p.x + p.vx * dt));
+    }
     if (Math.abs(p.vx) > 0.15) p.face = p.vx > 0 ? 1 : -1;
-    p.x = Math.max(0.05, Math.min(0.95, p.x + p.vx * dt));
     if (p.poseT > 0 && (p.poseT -= dt) <= 0) p.pose = "idle"; }
   for (const p of st.pops) { p.life -= dt * 1.2; p.y -= dt * 50; }
   st.pops = st.pops.filter(p => p.life > 0);
@@ -391,7 +417,7 @@ const RANKS = {
   ko: ["거지", "편의점 알바", "대학생", "배달 라이더", "신입 사원", "과장님", "사장님", "회장님", "재벌", "황금 재벌"],
   en: ["Beggar", "Part-timer", "Student", "Delivery rider", "New hire", "Manager", "CEO", "Chairman", "Tycoon", "Golden billionaire"],
 };
-const lookOf = owned => Math.min(9, owned);
+const lookOf = owned => Math.min(9, OLD_POS.filter(p => owned >= p).length);   // 원래 10개 자산을 살 때마다 신분 상승
 const HERO = Array.from({ length: 10 }, (_, k) => ({ a: img(`rich_${k}_a`), b: img(`rich_${k}_b`), c: img(`rich_${k}_c`) }));
 const rankName = () => (T === TEXT.ko ? RANKS.ko : RANKS.en)[lookOf(st.owned)];
 let bgFrom = null, bgFade = 0;                                     // 이사할 때 이전 배경에서 서서히 바뀜
@@ -487,13 +513,14 @@ function drawHero(H) {
   const p = st.pl, o = lookOf(st.owned), pose = p.pose === "catch" ? "b" : p.pose === "dizzy" ? "c" : "a";
   const im = HERO[o][pose], hh = heroH();
   const x = playX(p.x), moving = Math.abs(p.vx) > 0.2;
+  p.lean = (p.lean || 0) + (Math.max(-0.25, Math.min(0.25, p.vx * 0.08)) - (p.lean || 0)) * 0.25;   // 끌 때 기울기는 부드럽게
   const hop = pose === "b" ? hh * 0.06 : moving ? Math.abs(Math.sin(st.t * 26)) * hh * 0.04 : Math.abs(Math.sin(st.t * 4)) * hh * 0.015;
   const feet = groundY();
   cx.fillStyle = "rgba(0,0,0,.35)"; cx.beginPath(); cx.ellipse(R(x), R(feet), hh * 0.28, hh * 0.06, 0, 0, 7); cx.fill();   // 그림자
   if (!imgOk(im)) { cx.fillStyle = C.yellow; cx.fillRect(R(x - hh * 0.2), R(feet - hh), R(hh * 0.4), R(hh)); return; }
   const s = hh / 110, w = im.naturalWidth * s, h = im.naturalHeight * s;   // 모든 그림이 같은 배율 (서 있는 키 110px)
   cx.save(); cx.translate(R(x), R(feet - hop));
-  if (moving) cx.rotate(Math.max(-0.25, Math.min(0.25, p.vx * 0.08)));   // 달릴 때 살짝 기울기
+  if (Math.abs(p.lean) > 0.01) cx.rotate(p.lean);                  // 달릴 때 살짝 기울기
   if (p.face < 0 && pose !== "a") cx.scale(-1, 1);
   if (fever() && st.mode === "play") { cx.shadowColor = C.gold; cx.shadowBlur = 16; }
   cx.drawImage(im, R(-w / 2), R(-h), R(w), R(h));
@@ -601,7 +628,7 @@ function drawTitle(X, W, H) {
     if (imgOk(im)) { const k = hh / 110; cx.drawImage(im, R(X + W / 2 - im.naturalWidth * k / 2), R(by - 8 - im.naturalHeight * k), R(im.naturalWidth * k), R(im.naturalHeight * k)); } }
   button(bx, by, bw, bh, T.start, C.pink, "#8a1a55", () => startRound());
   const next = ASSETS[st.owned];
-  button(bx + bw * 0.1, by + bh + 18, bw * 0.8, 48, next && st.wallet >= next.price ? `${T.shop} ★` : T.shop, "#3ca0ff", "#1a4a8a", () => { st.mode = "shop"; });
+  button(bx + bw * 0.1, by + bh + 18, bw * 0.8, 48, next && st.wallet >= next.price ? `${T.shop} ★` : T.shop, "#3ca0ff", "#1a4a8a", () => openShop());
   text(T.how, X + W / 2, Math.min(H - 20, by + bh + 96), 12, "#ffffff", "center", true, W - 24);
 }
 
@@ -626,22 +653,35 @@ function drawResult(X, W, H) {
   rows.forEach(([k, v, c], i) => { text(k, px + 24, py + 150 + i * 22, 13, c, "left", false); text(String(v), px + pw / 2 - 10, py + 150 + i * 22, 13, "#ffffff", "right", false); });
   text(`${T.maxCombo} ${r.maxCombo}`, px + pw - 24, py + 150, 13, "#ffffff", "right", false);
   text(`${T.acc} ${Math.round(r.acc * 100)}%`, px + pw - 24, py + 170, 13, "#ffffff", "right", false);
-  text(`${T.worth} ${won(netWorth())}`, px + pw / 2, py + 240, 15, C.yellow, "center", true, pw - 20);
+  if (!r.clear) text(T.bustNote, px + pw / 2, py + 222, 11, "#ffb0c8", "center", false, pw - 24);   // 파산이 무슨 뜻인지
+  text(`${T.worth} ${won(netWorth())}`, px + pw / 2, py + 242, 15, C.yellow, "center", true, pw - 20);
   const bw = pw - 40, bx = px + 20;
   button(bx, py + 260, bw, 50, r.clear ? `${T.next} (${st.stage})` : T.retry, C.pink, "#8a1a55", () => afterResult());
   const next = ASSETS[st.owned];
-  button(bx + bw * 0.15, py + 318, bw * 0.7, 34, next && st.wallet >= next.price ? `${T.shop} ★` : T.shop, "#3ca0ff", "#1a4a8a", () => { st.mode = "shop"; st.shopFrom = "result"; });
+  button(bx + bw * 0.15, py + 318, bw * 0.7, 34, next && st.wallet >= next.price ? `${T.shop} ★` : T.shop, "#3ca0ff", "#1a4a8a", () => openShop("result"));
 }
 
+let shopScroll = 0, shopMax = 0, shopAuto = true;
+function openShop(from) { st.mode = "shop"; st.shopFrom = from || null; shopAuto = true; }
 function drawShop(X, W, H) {
   cx.fillStyle = "rgba(8,5,20,.6)"; cx.fillRect(0, 0, view.w, H);
   text(T.shop, X + W / 2, 30, 24, C.yellow, "center", true);
   text(`${T.wallet}(현금) ${won(st.wallet)} · ${T.worth} ${won(netWorth())}`.replace("(현금)", T === TEXT.ko ? "(현금)" : ""), X + W / 2, 58, 15, "#ffffff", "center", true, W - 20);   // 쓸 수 있는 돈 + 산 자산까지 합친 총자산
-  text(`${T.bonus} +${Math.round(assetBonus() * 100)}% · ${T.interestNote(Math.round(INTEREST * 100))}`, X + W / 2, 80, 12, C.green, "center", true, W - 20);
+  text(`${T.bonus} +${Math.round(assetBonus() * 100)}% · ${T.owned2(st.owned, ASSETS.length)}`, X + W / 2, 80, 12, C.green, "center", true, W - 20);
   const cols = 2, gap = 8, top = 98, bottom = H - 70;
-  const cw = (W - 24 - gap) / cols, ch = Math.min(96, (bottom - top - gap * 4) / 5);
+  const cw = (W - 24 - gap) / cols, ch = Math.min(88, Math.max(70, (bottom - top) / 5 - gap));
+  const rows = Math.ceil(ASSETS.length / cols), contentH = rows * (ch + gap);
+  shopMax = Math.max(0, contentH - (bottom - top));
+  if (shopAuto) {                                                  // 열 때: 다음에 살 자산이 보이게
+    shopAuto = false;
+    const row = Math.floor(Math.min(st.owned, ASSETS.length - 1) / cols);
+    shopScroll = Math.max(0, Math.min(shopMax, row * (ch + gap) - (bottom - top) * 0.35));
+  }
+  shopScroll = Math.max(0, Math.min(shopMax, shopScroll));
+  cx.save(); cx.beginPath(); cx.rect(X, top - 4, W, bottom - top + 4); cx.clip();
   ASSETS.forEach((a, i) => {
-    const x = X + 12 + (i % cols) * (cw + gap), y = top + Math.floor(i / cols) * (ch + gap);
+    const x = X + 12 + (i % cols) * (cw + gap), y = top + Math.floor(i / cols) * (ch + gap) - shopScroll;
+    if (y + ch < top - 4 || y > bottom) return;
     const own = i < st.owned, next = i === st.owned, can = next && st.wallet >= a.price;
     cx.fillStyle = C.ink; stepRect(cx, R(x), R(y), R(cw), R(ch), 3);
     cx.fillStyle = own ? "#2a2060" : next ? (can ? "#1f5a3a" : "#2a2440") : "#1a1630"; stepRect(cx, R(x + 2), R(y + 2), R(cw - 4), R(ch - 4), 3);
@@ -649,14 +689,20 @@ function drawShop(X, W, H) {
     cx.save(); if (!own && !next) { cx.globalAlpha = 0.25; cx.filter = "brightness(0)"; }
     fitImg(ASSET_IMG[i], x + 8, y + 8, isz, isz); cx.restore();
     const tx = x + isz + 14, tw = cw - isz - 20;
-    text(own || next ? T.assets[i] : T.locked, tx, y + ch * 0.28, 13, "#ffffff", "left", true, tw);
+    text(`${i + 1}. ${own || next ? assetName(i) : T.locked}`, tx, y + ch * 0.26, 13, "#ffffff", "left", true, tw);
     text(`+${Math.round(a.bonus * 100)}%`, tx, y + ch * 0.52, 12, C.green, "left", false, tw);
     if (own) text(T.owned, tx, y + ch * 0.76, 12, C.cyan, "left", false, tw);
     else if (next) {
       text(won(a.price), tx, y + ch * 0.76, 12, can ? C.yellow : "#cfc8ff", "left", false, tw);
-      hit(x, y, cw, ch, () => buyAsset());
-    }
+      if (y >= top - 4 && y + ch <= bottom + 4) hit(x, y, cw, ch, () => buyAsset());
+    } else text(won(a.price), tx, y + ch * 0.76, 11, "rgba(207,200,255,.45)", "left", false, tw);
   });
+  cx.restore();
+  if (shopMax > 0) {                                               // 오른쪽 스크롤 막대
+    const th = bottom - top, bh = Math.max(30, th * th / contentH), by = top + (th - bh) * (shopScroll / shopMax);
+    cx.fillStyle = "rgba(255,255,255,.12)"; cx.fillRect(R(X + W - 6), R(top), 3, R(th));
+    cx.fillStyle = C.yellow; cx.fillRect(R(X + W - 6), R(by), 3, R(bh));
+  }
   const bw = Math.min(W * 0.6, 240);
   button(X + (W - bw) / 2, H - 58, bw, 44, T.back, "#8a8aa8", "#3a3a58", () => { st.mode = st.shopFrom === "result" ? "result" : "title"; st.shopFrom = null; });
 }
@@ -665,6 +711,7 @@ function drawShop(X, W, H) {
 // 게임 중: 누르기만 하면 그대로 있고, 누른 채 끌면 끈 만큼만 움직인다 (상대 이동)
 let dragging = null, dragX0 = 0, dragTx0 = 0.5;
 function aimAt(clientX) {
+  if (st.pl.stun > 0) { dragX0 = clientX; dragTx0 = st.pl.x; return; }   // 어지러운 동안은 제자리 (풀린 뒤 튀지 않게 기준점만 옮김)
   st.pl.tx = Math.max(0.05, Math.min(0.95, dragTx0 + (clientX - dragX0) / playW()));
 }
 cv.addEventListener("pointerdown", e => {
@@ -676,13 +723,29 @@ cv.addEventListener("pointerdown", e => {
     try { cv.setPointerCapture(e.pointerId); } catch (_) {}
     return;
   }
+  if (st.mode === "shop") { shopDrag = { id: e.pointerId, y0: e.clientY, s0: shopScroll, moved: false, x, y }; try { cv.setPointerCapture(e.pointerId); } catch (_) {} return; }
+  tapAt(x, y);
+});
+function tapAt(x, y) {
   for (let i = st.hits.length - 1; i >= 0; i--) {
     const b = st.hits[i];
     if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) { b.fn(); return; }
   }
+}
+let shopDrag = null;                                               // 자산 사기 화면: 위아래로 끌어 넘기기
+cv.addEventListener("pointermove", e => {
+  if (st.mode === "play" && dragging === e.pointerId) aimAt(e.clientX);
+  if (st.mode === "shop" && shopDrag && shopDrag.id === e.pointerId) {
+    const dy = e.clientY - shopDrag.y0;
+    if (Math.abs(dy) > 6) shopDrag.moved = true;
+    if (shopDrag.moved) shopScroll = Math.max(0, Math.min(shopMax, shopDrag.s0 - dy));
+  }
 });
-cv.addEventListener("pointermove", e => { if (st.mode === "play" && dragging === e.pointerId) aimAt(e.clientX); });
-for (const ev of ["pointerup", "pointercancel"]) cv.addEventListener(ev, e => { if (dragging === e.pointerId) dragging = null; });
+for (const ev of ["pointerup", "pointercancel"]) cv.addEventListener(ev, e => {
+  if (dragging === e.pointerId) dragging = null;
+  if (shopDrag && shopDrag.id === e.pointerId) { const d = shopDrag; shopDrag = null; if (!d.moved && ev === "pointerup") tapAt(d.x, d.y); }
+});
+cv.addEventListener("wheel", e => { if (st.mode === "shop") { shopScroll = Math.max(0, Math.min(shopMax, shopScroll + e.deltaY)); e.preventDefault(); } }, { passive: false });
 const keysDown = new Set();
 window.addEventListener("keyup", e => keysDown.delete(e.key.toLowerCase()));
 window.addEventListener("keydown", e => {
